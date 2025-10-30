@@ -3,10 +3,10 @@ name: Build and publish
 on:
   push:
     branches:
-      - main
+      - api
   pull_request:
     branches:
-      - main
+      - api
 
 env:
   REGISTRY: ghcr.io
