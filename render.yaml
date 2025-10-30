@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: angular-node-monorepo
-    env: docker
-    dockerContext: .
-    plan: free
-    region: frankfurt
-    dockerfilePath: ./Dockerfile
