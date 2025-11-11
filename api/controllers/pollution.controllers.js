@@ -4,12 +4,12 @@ const Op = db.Sequelize.Op;
 
 // Patterns de validation
 const patterns = {
-  nom: /^[a-zA-ZÀ-ÿ0-9\s\-']{1,255}$/,
+  titre: /^[a-zA-ZÀ-ÿ0-9\s\-']{1,255}$/,
   lieu: /^[a-zA-ZÀ-ÿ0-9\s,.\-']{1,255}$/,
-  typePollution: /^[a-zA-ZÀ-ÿ\s\-]{1,100}$/,
+  type_pollution: /^[a-zA-ZÀ-ÿ\s\-]{1,100}$/,
   latitude: /^-?([0-8]?[0-9]|90)(\.[0-9]{1,6})?$/,
   longitude: /^-?(1[0-7][0-9]|[0-9]?[0-9])(\.[0-9]{1,6})?$/,
-  imageUrl: /^https?:\/\/.{1,500}$/,
+  photo_url: /^https?:\/\/.{1,500}$/,
   description: /^[\s\S]{0,2000}$/
 };
 
@@ -22,17 +22,17 @@ const validateInput = (field, value, pattern) => {
 // Créer et sauvegarder une nouvelle pollution
 exports.create = (req, res) => {
   // Valider la requête
-  if (!req.body.nom) {
+  if (!req.body.titre) {
     res.status(400).send({
-      message: "Le nom ne peut pas être vide!"
+      message: "Le titre ne peut pas être vide!"
     });
     return;
   }
 
   // Validation avec regex
-  if (!validateInput('nom', req.body.nom, patterns.nom)) {
+  if (!validateInput('titre', req.body.titre, patterns.titre)) {
     res.status(400).send({
-      message: "Le nom contient des caractères invalides ou est trop long (max 255 caractères)."
+      message: "Le titre contient des caractères invalides ou est trop long (max 255 caractères)."
     });
     return;
   }
@@ -44,7 +44,7 @@ exports.create = (req, res) => {
     return;
   }
 
-  if (req.body.typePollution && !validateInput('typePollution', req.body.typePollution, patterns.typePollution)) {
+  if (req.body.type_pollution && !validateInput('type_pollution', req.body.type_pollution, patterns.type_pollution)) {
     res.status(400).send({
       message: "Le type de pollution contient des caractères invalides (max 100 caractères)."
     });
@@ -65,7 +65,7 @@ exports.create = (req, res) => {
     return;
   }
 
-  if (req.body.imageUrl && !validateInput('imageUrl', req.body.imageUrl, patterns.imageUrl)) {
+  if (req.body.photo_url && !validateInput('photo_url', req.body.photo_url, patterns.photo_url)) {
     res.status(400).send({
       message: "L'URL de l'image doit être une URL HTTP ou HTTPS valide (max 500 caractères)."
     });
@@ -81,14 +81,14 @@ exports.create = (req, res) => {
 
   // Créer une pollution
   const pollution = {
-    nom: req.body.nom,
+    titre: req.body.titre,
     lieu: req.body.lieu,
-    dateObservation: req.body.dateObservation,
-    typePollution: req.body.typePollution,
+    date_observation: req.body.date_observation,
+    type_pollution: req.body.type_pollution,
     description: req.body.description,
     latitude: req.body.latitude,
     longitude: req.body.longitude,
-    imageUrl: req.body.imageUrl
+    photo_url: req.body.photo_url
   };
 
   // Sauvegarder la pollution dans la base de données
@@ -106,17 +106,17 @@ exports.create = (req, res) => {
 
 // Récupérer toutes les pollutions
 exports.findAll = (req, res) => {
-  const nom = req.query.nom;
+  const titre = req.query.titre;
   
   // Validation de la recherche pour éviter les injections
-  if (nom && !validateInput('nom', nom, patterns.nom)) {
+  if (titre && !validateInput('titre', titre, patterns.titre)) {
     res.status(400).send({
       message: "Le paramètre de recherche contient des caractères invalides."
     });
     return;
   }
   
-  var condition = nom ? { nom: { [Op.iLike]: `%${nom}%` } } : null;
+  let condition = titre ? { titre: { [Op.iLike]: `%${titre}%` } } : null;
 
   Pollution.findAll({ where: condition })
     .then(data => {
@@ -172,9 +172,9 @@ exports.update = (req, res) => {
   }
 
   // Validation des champs à mettre à jour
-  if (req.body.nom && !validateInput('nom', req.body.nom, patterns.nom)) {
+  if (req.body.titre && !validateInput('titre', req.body.titre, patterns.titre)) {
     res.status(400).send({
-      message: "Le nom contient des caractères invalides."
+      message: "Le titre contient des caractères invalides."
     });
     return;
   }
@@ -186,7 +186,7 @@ exports.update = (req, res) => {
     return;
   }
 
-  if (req.body.typePollution && !validateInput('typePollution', req.body.typePollution, patterns.typePollution)) {
+  if (req.body.type_pollution && !validateInput('type_pollution', req.body.type_pollution, patterns.type_pollution)) {
     res.status(400).send({
       message: "Le type de pollution contient des caractères invalides."
     });
@@ -207,7 +207,7 @@ exports.update = (req, res) => {
     return;
   }
 
-  if (req.body.imageUrl && !validateInput('imageUrl', req.body.imageUrl, patterns.imageUrl)) {
+  if (req.body.photo_url && !validateInput('photo_url', req.body.photo_url, patterns.photo_url)) {
     res.status(400).send({
       message: "L'URL de l'image doit être une URL HTTP ou HTTPS valide."
     });

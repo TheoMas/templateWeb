@@ -1,9 +1,10 @@
 const express = require("express");
 const cors = require("cors");
+const db = require("./models");
 
 const app  = express ();
 
-var corsOptions = {
+let corsOptions = {
   origin: "*",
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   headers: 'Content-Type, Authorization',
@@ -22,8 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to CNAM application." });
 });
-
-const db = require("./models");
 
 db.sequelize.sync()
   .then(() => {

@@ -1,7 +1,7 @@
 module.exports = app => {
     const pollution = require("../controllers/pollution.controllers.js");
   
-    var router = require("express").Router();
+    let router = require("express").Router();
   
     // Créer une nouvelle pollution
     router.post("/", pollution.create);
@@ -21,5 +21,5 @@ module.exports = app => {
     // Supprimer toutes les pollutions
     router.delete("/", pollution.deleteAll);
   
-    app.use('/api/pollution', router);
-  };
+    app.use('/api/pollutions', router);
+};
