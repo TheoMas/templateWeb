@@ -4,6 +4,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER,
       primaryKey: true,
       allowNull: false,
+      field: 'userId',
       references: {
         model: 'utilisateurs',
         key: 'id'
@@ -13,6 +14,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER,
       primaryKey: true,
       allowNull: false,
+      field: 'pollutionId',
       references: {
         model: 'pollutions',
         key: 'id'
@@ -20,15 +22,17 @@ module.exports = (sequelize, Sequelize) => {
     },
     createdAt: {
       type: Sequelize.DATE,
-      defaultValue: Sequelize.NOW
+      defaultValue: Sequelize.NOW,
+      field: 'createdAt'
     },
     updatedAt: {
       type: Sequelize.DATE,
-      defaultValue: Sequelize.NOW
+      defaultValue: Sequelize.NOW,
+      field: 'updatedAt'
     }
   }, {
-    timestamps: false,
-    underscored: true
+    tableName: 'user_favorites',
+    timestamps: false
   });
 
   return UserFavorites;

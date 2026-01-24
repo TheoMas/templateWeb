@@ -12,7 +12,8 @@ module.exports = (sequelize, Sequelize) => {
     },
     type_pollution: {
       type: Sequelize.ENUM('Plastique', 'Chimique', 'Dépôt sauvage', 'Eau', 'Air', 'Autre'),
-      allowNull: false
+      allowNull: false,
+      field: 'type_pollution'
     },
     description: {
       type: Sequelize.TEXT,
@@ -20,7 +21,8 @@ module.exports = (sequelize, Sequelize) => {
     },
     date_observation: {
       type: Sequelize.DATEONLY,
-      allowNull: false
+      allowNull: false,
+      field: 'date_observation'
     },
     lieu: {
       type: Sequelize.TEXT,
@@ -35,19 +37,23 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     photo_url: {
-      type: Sequelize.TEXT
+      type: Sequelize.TEXT,
+      field: 'photo_url'
     },
     created_at: {
       type: Sequelize.DATE,
-      defaultValue: Sequelize.NOW
+      defaultValue: Sequelize.NOW,
+      field: 'created_at'
     },
     updated_at: {
       type: Sequelize.DATE,
-      defaultValue: Sequelize.NOW
+      defaultValue: Sequelize.NOW,
+      field: 'updated_at'
     }
   }, {
+    tableName: 'pollutions',
     timestamps: false,
-    underscored: true
+    underscored: false
   });
 
   return Pollution;
