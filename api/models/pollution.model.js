@@ -37,7 +37,7 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     photo_url: {
-      type: Sequelize.TEXT('medium'),
+      type: Sequelize.TEXT,
       allowNull: true,
       field: 'photo_url'
     },
