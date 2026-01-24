@@ -37,8 +37,9 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     photo_url: {
-      type: Sequelize.TEXT,
-      field: 'photo_url'
+      type: Sequelize.TEXT('long'),
+      field: 'photo_url',
+      comment: 'Image stockée en base64'
     },
     created_at: {
       type: Sequelize.DATE,
