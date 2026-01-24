@@ -203,6 +203,13 @@ exports.update = (req, res) => {
     return;
   }
 
+  if (req.body.description && !validateInput('description', req.body.description, patterns.description)) {
+    res.status(400).send({
+      message: "La description est trop longue (max 2000 caractères)."
+    });
+    return;
+  }
+
   Pollution.update(req.body, {
     where: { id: id }
   })
