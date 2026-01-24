@@ -1,9 +1,10 @@
 const { Sequelize } = require ("sequelize");
 const { BDD }  = require ('../config');
-const sequelize = new Sequelize(`postgres://${BDD.user}:${BDD.password}@${BDD.host}/${BDD.bdname}`
-,{
+
+const sequelize = new Sequelize(BDD.bdname, BDD.user, BDD.password, {
+    host: BDD.host,
+    port: BDD.port,
     dialect: 'postgres',
-    protocol: 'postgres',
     dialectOptions: {
       ssl: {
         require: true,
