@@ -11,7 +11,6 @@ const patterns = {
   lieu: /^.{1,255}$/,
   latitude: /^-?([0-8]?[0-9]|90)(\.[0-9]{1,10})?$/,
   longitude: /^-?(1[0-7][0-9]|[0-9]?[0-9])(\.[0-9]{1,10})?$/,
-  photo_url: /^https?:\/\/.{1,500}$/,
   description: /^[\s\S]{1,2000}$/
 };
 
@@ -71,13 +70,6 @@ exports.create = (req, res) => {
   if (!validateInput('longitude', req.body.longitude.toString(), patterns.longitude)) {
     res.status(400).send({
       message: "La longitude doit être comprise entre -180 et 180 degrés."
-    });
-    return;
-  }
-
-  if (req.body.photo_url && !validateInput('photo_url', req.body.photo_url, patterns.photo_url)) {
-    res.status(400).send({
-      message: "L'URL de l'image doit être une URL HTTP ou HTTPS valide (max 500 caractères)."
     });
     return;
   }
@@ -206,20 +198,6 @@ exports.update = (req, res) => {
   if (req.body.longitude && !validateInput('longitude', req.body.longitude.toString(), patterns.longitude)) {
     res.status(400).send({
       message: "La longitude doit être comprise entre -180 et 180 degrés."
-    });
-    return;
-  }
-
-  if (req.body.photo_url && !validateInput('photo_url', req.body.photo_url, patterns.photo_url)) {
-    res.status(400).send({
-      message: "L'URL de l'image doit être une URL HTTP ou HTTPS valide."
-    });
-    return;
-  }
-
-  if (req.body.description && !validateInput('description', req.body.description, patterns.description)) {
-    res.status(400).send({
-      message: "La description est trop longue (max 2000 caractères)."
     });
     return;
   }
