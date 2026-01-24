@@ -24,7 +24,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to CNAM application." });
 });
 
-db.sequelize.sync()
+db.sequelize.sync({ alter: true })
   .then(() => {
     console.log("Synced db.");
   })

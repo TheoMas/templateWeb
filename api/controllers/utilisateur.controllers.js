@@ -1,15 +1,12 @@
-const { v4: uuidv4 } = require("uuid");
 const db = require("../models");
 const Utilisateurs = db.utilisateurs;
 const Op = db.Sequelize.Op;
 
 // Patterns de validation
 const patterns = {
-  id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  nom: /^[a-zA-ZÀ-ÿ\s\-']{1,100}$/,
-  prenom: /^[a-zA-ZÀ-ÿ\s\-']{1,100}$/,
-  login: /^[A-Za-z0-9_\-]{3,50}$/,
-  pass: /^.{6,255}$/  // Au moins 6 caractères
+  username: /^[A-Za-z0-9_\-]{3,50}$/,
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  password: /^.{6,255}$/  // Au moins 6 caractères
 };
 
 // Fonction de validation
@@ -21,59 +18,63 @@ const validateInput = (field, value, pattern) => {
 // Créer et sauvegarder un nouvel utilisateur
 exports.create = (req, res) => {
   // Valider la requête
-  if (!req.body.nom || !req.body.prenom || !req.body.login || !req.body.pass) {
+  if (!req.body.username || !req.body.email || !req.body.password) {
     res.status(400).send({
-      message: "Le nom, prénom, login et mot de passe sont obligatoires!"
+      message: "Le nom d'utilisateur, l'email et le mot de passe sont obligatoires!"
     });
     return;
   }
 
   // Validation avec regex
-  if (!validateInput('nom', req.body.nom, patterns.nom)) {
+  if (!validateInput('username', req.body.username, patterns.username)) {
     res.status(400).send({
-      message: "Le nom contient des caractères invalides ou est trop long (max 100 caractères)."
+      message: "Le nom d'utilisateur doit contenir entre 3 et 50 caractères alphanumériques, tirets ou underscores."
     });
     return;
   }
 
-  if (!validateInput('prenom', req.body.prenom, patterns.prenom)) {
+  if (!validateInput('email', req.body.email, patterns.email)) {
     res.status(400).send({
-      message: "Le prénom contient des caractères invalides ou est trop long (max 100 caractères)."
+      message: "L'email n'est pas valide."
     });
     return;
   }
 
-  if (!validateInput('login', req.body.login, patterns.login)) {
-    res.status(400).send({
-      message: "Le login doit contenir entre 3 et 50 caractères alphanumériques, tirets ou underscores."
-    });
-    return;
-  }
-
-  if (!validateInput('pass', req.body.pass, patterns.pass)) {
+  if (!validateInput('password', req.body.password, patterns.password)) {
     res.status(400).send({
       message: "Le mot de passe doit contenir au moins 6 caractères."
     });
     return;
   }
 
-  // Vérifier si le login existe déjà
-  Utilisateurs.findOne({ where: { login: req.body.login } })
+  // Vérifier si l'username ou l'email existe déjà
+  Utilisateurs.findOne({ 
+    where: { 
+      [Op.or]: [
+        { username: req.body.username },
+        { email: req.body.email }
+      ]
+    } 
+  })
     .then(existingUser => {
       if (existingUser) {
-        res.status(409).send({
-          message: "Ce login est déjà utilisé."
-        });
+        if (existingUser.username === req.body.username) {
+          res.status(409).send({
+            message: "Ce nom d'utilisateur est déjà utilisé."
+          });
+        } else {
+          res.status(409).send({
+            message: "Cet email est déjà utilisé."
+          });
+        }
         return;
       }
 
       // Créer un utilisateur
       const utilisateur = {
-        id: uuidv4(),
-        nom: req.body.nom,
-        prenom: req.body.prenom,
-        login: req.body.login,
-        pass: req.body.pass  // En production, utiliser bcrypt pour hasher
+        username: req.body.username,
+        email: req.body.email,
+        password: req.body.password  // En production, utiliser bcrypt pour hasher
       };
 
       // Sauvegarder l'utilisateur dans la base de données
@@ -82,9 +83,8 @@ exports.create = (req, res) => {
           // Ne pas renvoyer le mot de passe
           const userResponse = {
             id: data.id,
-            nom: data.nom,
-            prenom: data.prenom,
-            login: data.login
+            username: data.username,
+            email: data.email
           };
           res.status(201).send(userResponse);
         })
@@ -96,28 +96,28 @@ exports.create = (req, res) => {
     })
     .catch(err => {
       res.status(500).send({
-        message: err.message || "Erreur lors de la vérification du login."
+        message: err.message || "Erreur lors de la vérification du nom d'utilisateur/email."
       });
     });
 };
 
 // Récupérer tous les utilisateurs
 exports.findAll = (req, res) => {
-  const nom = req.query.nom;
+  const username = req.query.username;
   
   // Validation de la recherche
-  if (nom && !validateInput('nom', nom, patterns.nom)) {
+  if (username && !validateInput('username', username, patterns.username)) {
     res.status(400).send({
       message: "Le paramètre de recherche contient des caractères invalides."
     });
     return;
   }
   
-  let condition = nom ? { nom: { [Op.iLike]: `%${nom}%` } } : null;
+  let condition = username ? { username: { [Op.iLike]: `%${username}%` } } : null;
 
   Utilisateurs.findAll({ 
     where: condition,
-    attributes: { exclude: ['pass'] }  // Exclure le mot de passe
+    attributes: { exclude: ['password'] }  // Exclure le mot de passe
   })
     .then(data => {
       res.send(data);
@@ -133,16 +133,8 @@ exports.findAll = (req, res) => {
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
-  // Validation de l'ID (UUID)
-  if (!validateInput('id', id, patterns.id)) {
-    res.status(400).send({
-      message: "L'ID doit être un UUID valide."
-    });
-    return;
-  }
-
   Utilisateurs.findByPk(id, {
-    attributes: { exclude: ['pass'] }  // Exclure le mot de passe
+    attributes: { exclude: ['password'] }  // Exclure le mot de passe
   })
     .then(data => {
       if (data) {
@@ -160,34 +152,34 @@ exports.findOne = (req, res) => {
     });
 };
 
-// Récupérer un utilisateur par login
-exports.findByLogin = (req, res) => {
-  const login = req.params.login;
+// Récupérer un utilisateur par username
+exports.findByUsername = (req, res) => {
+  const username = req.params.username;
 
-  // Validation du login
-  if (!validateInput('login', login, patterns.login)) {
+  // Validation du username
+  if (!validateInput('username', username, patterns.username)) {
     res.status(400).send({
-      message: "Le login contient des caractères invalides."
+      message: "Le nom d'utilisateur contient des caractères invalides."
     });
     return;
   }
 
   Utilisateurs.findOne({ 
-    where: { login: login },
-    attributes: { exclude: ['pass'] }  // Exclure le mot de passe
+    where: { username: username },
+    attributes: { exclude: ['password'] }  // Exclure le mot de passe
   })
     .then(data => {
       if (data) {
         res.send(data);
       } else {
         res.status(404).send({
-          message: `Utilisateur avec login=${login} introuvable.`
+          message: `Utilisateur avec username=${username} introuvable.`
         });
       }
     })
     .catch(err => {
       res.status(500).send({
-        message: "Erreur lors de la récupération de l'utilisateur avec login=" + login
+        message: "Erreur lors de la récupération de l'utilisateur avec username=" + username
       });
     });
 };
@@ -196,51 +188,53 @@ exports.findByLogin = (req, res) => {
 exports.update = (req, res) => {
   const id = req.params.id;
 
-  // Validation de l'ID
-  if (!validateInput('id', id, patterns.id)) {
-    res.status(400).send({
-      message: "L'ID doit être un UUID valide."
-    });
-    return;
-  }
-
   // Validation des champs à mettre à jour
-  if (req.body.nom && !validateInput('nom', req.body.nom, patterns.nom)) {
+  if (req.body.username && !validateInput('username', req.body.username, patterns.username)) {
     res.status(400).send({
-      message: "Le nom contient des caractères invalides."
+      message: "Le nom d'utilisateur contient des caractères invalides."
     });
     return;
   }
 
-  if (req.body.prenom && !validateInput('prenom', req.body.prenom, patterns.prenom)) {
+  if (req.body.email && !validateInput('email', req.body.email, patterns.email)) {
     res.status(400).send({
-      message: "Le prénom contient des caractères invalides."
+      message: "L'email n'est pas valide."
     });
     return;
   }
 
-  if (req.body.login && !validateInput('login', req.body.login, patterns.login)) {
-    res.status(400).send({
-      message: "Le login contient des caractères invalides."
-    });
-    return;
-  }
-
-  if (req.body.pass && !validateInput('pass', req.body.pass, patterns.pass)) {
+  if (req.body.password && !validateInput('password', req.body.password, patterns.password)) {
     res.status(400).send({
       message: "Le mot de passe doit contenir au moins 6 caractères."
     });
     return;
   }
 
-  // Si on change le login, vérifier qu'il n'existe pas déjà
-  if (req.body.login) {
-    Utilisateurs.findOne({ where: { login: req.body.login, id: { [Op.ne]: id } } })
+  // Si on change le username ou l'email, vérifier qu'ils n'existent pas déjà
+  if (req.body.username || req.body.email) {
+    let conditions = [];
+    if (req.body.username) conditions.push({ username: req.body.username });
+    if (req.body.email) conditions.push({ email: req.body.email });
+
+    Utilisateurs.findOne({ 
+      where: { 
+        [Op.and]: [
+          { [Op.or]: conditions },
+          { id: { [Op.ne]: id } }
+        ]
+      } 
+    })
       .then(existingUser => {
         if (existingUser) {
-          res.status(409).send({
-            message: "Ce login est déjà utilisé par un autre utilisateur."
-          });
+          if (existingUser.username === req.body.username) {
+            res.status(409).send({
+              message: "Ce nom d'utilisateur est déjà utilisé."
+            });
+          } else {
+            res.status(409).send({
+              message: "Cet email est déjà utilisé."
+            });
+          }
           return;
         }
 
@@ -249,11 +243,11 @@ exports.update = (req, res) => {
       })
       .catch(err => {
         res.status(500).send({
-          message: "Erreur lors de la vérification du login."
+          message: "Erreur lors de la vérification."
         });
       });
   } else {
-    // Mettre à jour sans vérifier le login
+    // Mettre à jour sans vérifier
     performUpdate(id, req.body, res);
   }
 };
@@ -285,14 +279,6 @@ const performUpdate = (id, data, res) => {
 exports.delete = (req, res) => {
   const id = req.params.id;
 
-  // Validation de l'ID
-  if (!validateInput('id', id, patterns.id)) {
-    res.status(400).send({
-      message: "L'ID doit être un UUID valide."
-    });
-    return;
-  }
-
   Utilisateurs.destroy({
     where: { id: id }
   })
@@ -316,37 +302,36 @@ exports.delete = (req, res) => {
 
 // Authentification - Login
 exports.login = (req, res) => {
-  const utilisateur = {
-    login: req.body.login,
-    pass: req.body.pass
+  const credentials = {
+    email: req.body.email,
+    password: req.body.password
   };
 
   // Validation
-  if (!validateInput('login', utilisateur.login, patterns.login)) {
+  if (!validateInput('email', credentials.email, patterns.email)) {
     res.status(400).send({
-      message: "Login invalide."
+      message: "Email invalide."
     });
     return;
   }
 
-  if (!utilisateur.pass) {
+  if (!credentials.password) {
     res.status(400).send({
       message: "Mot de passe requis."
     });
     return;
   }
 
-  Utilisateurs.findOne({ where: { login: utilisateur.login } })
+  Utilisateurs.findOne({ where: { email: credentials.email } })
     .then(data => {
       if (data) {
         // En production, utiliser bcrypt.compare() pour vérifier le mot de passe hashé
-        if (data.pass === utilisateur.pass) {
+        if (data.password === credentials.password) {
           // Authentification réussie
           const userResponse = {
             id: data.id,
-            nom: data.nom,
-            prenom: data.prenom,
-            login: data.login,
+            username: data.username,
+            email: data.email,
             token: 'fake-jwt-token-' + data.id  // En production, générer un vrai JWT
           };
           res.send(userResponse);
@@ -357,30 +342,30 @@ exports.login = (req, res) => {
         }
       } else {
         res.status(404).send({
-          message: `Utilisateur avec login=${utilisateur.login} introuvable.`
+          message: `Utilisateur avec email=${credentials.email} introuvable.`
         });
       }
     })
     .catch(err => {
       res.status(500).send({
-        message: "Erreur lors de la connexion avec login=" + utilisateur.login
+        message: "Erreur lors de la connexion avec email=" + credentials.email
       });
     });
 };
 
-// Vérifier la disponibilité d'un login
-exports.checkLogin = (req, res) => {
-  const login = req.params.login;
+// Vérifier la disponibilité d'un username
+exports.checkUsername = (req, res) => {
+  const username = req.params.username;
 
-  // Validation du login
-  if (!validateInput('login', login, patterns.login)) {
+  // Validation du username
+  if (!validateInput('username', username, patterns.username)) {
     res.status(400).send({
-      message: "Le login contient des caractères invalides."
+      message: "Le nom d'utilisateur contient des caractères invalides."
     });
     return;
   }
 
-  Utilisateurs.findOne({ where: { login: login } })
+  Utilisateurs.findOne({ where: { username: username } })
     .then(data => {
       res.send({
         available: !data  // true si aucun utilisateur trouvé
@@ -388,41 +373,41 @@ exports.checkLogin = (req, res) => {
     })
     .catch(err => {
       res.status(500).send({
-        message: "Erreur lors de la vérification du login."
+        message: "Erreur lors de la vérification du nom d'utilisateur."
       });
     });
 };
 
 // Rechercher des utilisateurs
 exports.search = (req, res) => {
-  const { nom, prenom } = req.query;
+  const { username, email } = req.query;
   let conditions = [];
 
-  if (nom) {
-    if (!validateInput('nom', nom, patterns.nom)) {
+  if (username) {
+    if (!validateInput('username', username, patterns.username)) {
       res.status(400).send({
-        message: "Le paramètre nom contient des caractères invalides."
+        message: "Le paramètre username contient des caractères invalides."
       });
       return;
     }
-    conditions.push({ nom: { [Op.iLike]: `%${nom}%` } });
+    conditions.push({ username: { [Op.iLike]: `%${username}%` } });
   }
 
-  if (prenom) {
-    if (!validateInput('prenom', prenom, patterns.prenom)) {
+  if (email) {
+    if (!validateInput('email', email, patterns.email)) {
       res.status(400).send({
-        message: "Le paramètre prenom contient des caractères invalides."
+        message: "Le paramètre email n'est pas valide."
       });
       return;
     }
-    conditions.push({ prenom: { [Op.iLike]: `%${prenom}%` } });
+    conditions.push({ email: { [Op.iLike]: `%${email}%` } });
   }
 
-  const whereClause = conditions.length > 0 ? { [Op.and]: conditions } : null;
+  const whereClause = conditions.length > 0 ? { [Op.or]: conditions } : null;
 
   Utilisateurs.findAll({ 
     where: whereClause,
-    attributes: { exclude: ['pass'] }  // Exclure le mot de passe
+    attributes: { exclude: ['password'] }  // Exclure le mot de passe
   })
     .then(data => {
       res.send(data);
