@@ -14,10 +14,11 @@ let corsOptions = {
 app.use(cors(corsOptions));
 
 // parse requests of content-type - application/json
-app.use(express.json());
+// Augmenter la limite à 10MB pour supporter les images base64
+app.use(express.json({ limit: '10mb' }));
 
 // parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // simple route
 app.get("/", (req, res) => {
