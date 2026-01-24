@@ -181,9 +181,10 @@ exports.update = (req, res) => {
     return;
   }
 
-  if (req.body.type_pollution && !validateInput('type_pollution', req.body.type_pollution, patterns.type_pollution)) {
+  // Validation du type de pollution avec la liste valide
+  if (req.body.type_pollution && !validPollutionTypes.includes(req.body.type_pollution)) {
     res.status(400).send({
-      message: "Le type de pollution contient des caractères invalides."
+      message: `Le type de pollution doit être l'un des suivants: ${validPollutionTypes.join(', ')}`
     });
     return;
   }
