@@ -1,5 +1,5 @@
 module.exports =  {
-    ACCESS_TOKEN_SECRET : "EMMA123",
+    ACCESS_TOKEN_SECRET : process.env.API || "EMMA123",
     BDD : {
     "host" :"@dpg-d5mh5ipr0fns73evvqn0-a.oregon-postgres.render.com/api_pollution_4ajj",
     "port" : "5432",
