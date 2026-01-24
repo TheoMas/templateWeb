@@ -1,17 +1,32 @@
 const { Sequelize } = require ("sequelize");
-const { BDD }  = require ('../config');
-const sequelize = new Sequelize(`postgres://${BDD.user}:${BDD.password}@${BDD.host}/${BDD.bdname}`
-,{
-    dialect: 'postgres',
-    protocol: 'postgres',
-    dialectOptions: {
-      ssl: true,
-      native:true
-    },
-    define:  {
-    	timestamps:false
-    }
-  });
+const config  = require ('../config');
+
+// Use DATABASE_URL if available (Render provides this), otherwise use individual credentials
+const sequelize = config.DATABASE_URL 
+  ? new Sequelize(config.DATABASE_URL, {
+      dialect: 'postgres',
+      protocol: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      },
+      define: {
+        timestamps: false
+      }
+    })
+  : new Sequelize(`postgres://${config.BDD.user}:${config.BDD.password}@${config.BDD.host}/${config.BDD.bdname}`, {
+      dialect: 'postgres',
+      protocol: 'postgres',
+      dialectOptions: {
+        ssl: true,
+        native: true
+      },
+      define: {
+        timestamps: false
+      }
+    });
 
 const db = {};
 
