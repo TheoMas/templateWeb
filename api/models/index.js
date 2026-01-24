@@ -23,5 +23,19 @@ db.sequelize = sequelize;
 
 db.pollution = require("./pollution.model.js")(sequelize, Sequelize);
 db.utilisateurs = require("./utilisateurs.model.js")(sequelize, Sequelize);
+db.user_favorites = require("./user_favorites.model.js")(sequelize, Sequelize);
+
+// Define associations (many-to-many relationship)
+db.utilisateurs.belongsToMany(db.pollution, { 
+  through: db.user_favorites, 
+  foreignKey: 'userId',
+  as: 'favorites'
+});
+
+db.pollution.belongsToMany(db.utilisateurs, { 
+  through: db.user_favorites, 
+  foreignKey: 'pollutionId',
+  as: 'favoritedBy'
+});
 
 module.exports = db;

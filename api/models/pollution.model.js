@@ -7,31 +7,47 @@ module.exports = (sequelize, Sequelize) => {
       autoIncrement: true
     },
     titre: {
-      type: Sequelize.STRING,
+      type: Sequelize.TEXT,
+      allowNull: false
+    },
+    type_pollution: {
+      type: Sequelize.ENUM('Plastique', 'Chimique', 'Dépôt sauvage', 'Eau', 'Air', 'Autre'),
+      allowNull: false
+    },
+    description: {
+      type: Sequelize.TEXT,
+      allowNull: false
+    },
+    date_observation: {
+      type: Sequelize.DATEONLY,
       allowNull: false
     },
     lieu: {
-      type: Sequelize.STRING
-    },
-    date_observation: {
-      type: Sequelize.DATE
-    },
-    type_pollution: {
-      type: Sequelize.STRING
-    },
-    description: {
-      type: Sequelize.TEXT
+      type: Sequelize.TEXT,
+      allowNull: false
     },
     latitude: {
-      // stocke les coordonnées GPS avec 6 décimales
-      type: Sequelize.DECIMAL(9,6)
+      type: Sequelize.DOUBLE,
+      allowNull: false
     },
     longitude: {
-      type: Sequelize.DECIMAL(9,6)
+      type: Sequelize.DOUBLE,
+      allowNull: false
     },
     photo_url: {
-      type: Sequelize.STRING
+      type: Sequelize.TEXT
+    },
+    created_at: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.NOW
+    },
+    updated_at: {
+      type: Sequelize.DATE,
+      defaultValue: Sequelize.NOW
     }
+  }, {
+    timestamps: false,
+    underscored: true
   });
 
   return Pollution;
