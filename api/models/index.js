@@ -38,4 +38,15 @@ db.pollution.belongsToMany(db.utilisateurs, {
   as: 'favoritedBy'
 });
 
+// Associations for eager loading
+db.user_favorites.belongsTo(db.pollution, { 
+  foreignKey: 'pollutionId',
+  as: 'pollution'
+});
+
+db.user_favorites.belongsTo(db.utilisateurs, { 
+  foreignKey: 'userId',
+  as: 'user'
+});
+
 module.exports = db;
