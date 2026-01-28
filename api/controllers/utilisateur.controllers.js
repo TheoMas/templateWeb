@@ -43,9 +43,16 @@ exports.refreshToken = async (req, res) => {
       role_id: user.role_id || 2
     };
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    // Retourner accessToken et refreshToken dans le corps (pas de cookie)
-    res.setHeader('Authorization', 'Bearer ' + accessToken);
-    res.json({ accessToken, refreshToken: newRefreshToken });
+    // Placer le nouveau access token dans un cookie httpOnly (comme au login)
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 15 * 60 * 1000
+    };
+    res.cookie('access_token', accessToken, cookieOptions);
+    // Retourner uniquement le nouveau refresh token (rotation)
+    res.json({ refreshToken: newRefreshToken });
   } catch (err) {
     console.error('[AUTH] refresh error:', err && err.message ? err.message : err);
     res.status(500).json({ message: 'Erreur lors du refresh token.' });
@@ -389,13 +396,19 @@ exports.login = async (req, res) => {
         // Stocker le refresh token en BDD
         const RefreshToken = db.refresh_token;
         await RefreshToken.create({ userId: data.id, token: refreshToken });
-        // Retourner accessToken et refreshToken dans le corps de la réponse
-        res.setHeader('Authorization', 'Bearer ' + accessToken);
+        // Placer le JWT dans un cookie httpOnly sécurisé (le client n'y accède pas via JS)
+        const cookieOptions = {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          maxAge: 15 * 60 * 1000 // 15 min
+        };
+        res.cookie('access_token', accessToken, cookieOptions);
+        // Retourner uniquement le refresh token (à stocker côté client)
         res.json({
           id: data.id,
           username: data.username,
           email: data.email,
-          accessToken,
           refreshToken
         });
       } else {
