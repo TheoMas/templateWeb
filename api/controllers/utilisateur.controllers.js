@@ -1,4 +1,15 @@
-// Rafraîchir le JWT access token (sécurisé avec BDD)
+// Déconnexion : supprime le refresh token en BDD et le cookie côté client
+exports.logout = async (req, res) => {
+  const { refreshToken } = req.body;
+  const RefreshToken = db.refresh_token;
+  if (refreshToken) {
+    await RefreshToken.destroy({ where: { token: refreshToken } });
+  }
+  res.clearCookie('access_token');
+  res.status(200).json({ message: 'Déconnecté.' });
+};
+// Rafraîchir le JWT access token (sécurisé avec BDD, rotation du refresh token)
+const crypto = require('crypto');
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
   const jwt = require('jsonwebtoken');
@@ -18,6 +29,11 @@ exports.refreshToken = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé.' });
     }
+    // Supprimer l'ancien refresh token (rotation)
+    await tokenRecord.destroy();
+    // Générer un nouveau refresh token
+    const newRefreshToken = crypto.randomBytes(64).toString('hex');
+    await RefreshToken.create({ userId: user.id, token: newRefreshToken });
     // Générer un nouveau access token
     const userPayload = {
       id: user.id,
@@ -26,7 +42,7 @@ exports.refreshToken = async (req, res) => {
       role_id: user.role_id || 2
     };
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    res.json({ accessToken });
+    res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (err) {
     res.status(500).json({ message: 'Erreur lors du refresh token.' });
   }

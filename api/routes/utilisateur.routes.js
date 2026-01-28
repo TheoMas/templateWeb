@@ -6,6 +6,7 @@ module.exports = app => {
     // Authentification (publiques)
     router.post("/auth/login", utilisateur.login);
     router.post("/auth/refresh", utilisateur.refreshToken);
+    router.post("/auth/logout", utilisateur.logout);
     router.get("/check/username/:username", utilisateur.checkUsername);
 
     // Middleware JWT pour toutes les autres routes

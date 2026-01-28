@@ -1,4 +1,4 @@
-// Middleware pour sécuriser les routes avec JWT (cookie httpOnly)
+// Middleware pour sécuriser les routes avec JWT (cookie httpOnly ou Authorization header)
 const jwt = require('jsonwebtoken');
 const config = require('./config');
 
