@@ -302,7 +302,7 @@ exports.delete = (req, res) => {
 
 // Authentification - Login (JWT sécurisé en cookie httpOnly)
 const jwt = require('jsonwebtoken');
-const config = require('./config');
+const config = require('../config');
 
 exports.login = (req, res) => {
   const credentials = {
