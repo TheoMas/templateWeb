@@ -19,8 +19,10 @@ exports.refreshToken = async (req, res) => {
     return res.status(401).json({ message: 'Refresh token manquant.' });
   }
   try {
+    console.log('[AUTH] refresh attempt for token:', refreshToken ? refreshToken.substring(0,8) + '...' : 'null');
     // Chercher le refresh token en BDD
     const tokenRecord = await RefreshToken.findOne({ where: { token: refreshToken } });
+    console.log('[AUTH] tokenRecord found:', !!tokenRecord);
     if (!tokenRecord) {
       return res.status(403).json({ message: 'Refresh token invalide.' });
     }
@@ -44,6 +46,7 @@ exports.refreshToken = async (req, res) => {
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
     res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (err) {
+    console.error('[AUTH] refresh error:', err && err.message ? err.message : err);
     res.status(500).json({ message: 'Erreur lors du refresh token.' });
   }
 };
