@@ -44,13 +44,14 @@ exports.refreshToken = async (req, res) => {
       role_id: user.role_id || 2
     };
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    // Placer le nouveau access token dans un cookie httpOnly (comme au login)
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000
-    });
+        // Placer le nouveau access token dans un cookie httpOnly (comme au login)
+        const cookieOptions = {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          maxAge: 15 * 60 * 1000
+        };
+        res.cookie('access_token', accessToken, cookieOptions);
     // Exposer aussi le token dans l'en-tête Authorization pour compatibilité
     res.setHeader('Authorization', 'Bearer ' + accessToken);
     res.json({ accessToken, refreshToken: newRefreshToken });
@@ -404,6 +405,13 @@ exports.login = async (req, res) => {
           sameSite: 'lax',
           maxAge: 15 * 60 * 1000 // 15 min
         });
+          const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 15 * 60 * 1000 // 15 min
+          };
+          res.cookie('access_token', accessToken, cookieOptions);
         // Exposer aussi le token dans l'en-tête Authorization pour compatibilité
         res.setHeader('Authorization', 'Bearer ' + accessToken);
         // Retourner le refresh token dans la réponse (à stocker côté client)
