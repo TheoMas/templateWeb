@@ -10,10 +10,13 @@ module.exports = app => {
     router.get("/check/username/:username", utilisateur.checkUsername);
 
     // Middleware JWT pour toutes les autres routes
+    // Laisser la création d'utilisateur publique (inscription)
+    router.post("/", utilisateur.create);                          // Créer un utilisateur (inscription)
+
+    // Middleware JWT pour toutes les autres routes
     router.use(authenticateJWT);
 
     // CRUD Routes protégées
-    router.post("/", utilisateur.create);                          // Créer un utilisateur
     router.get("/", utilisateur.findAll);                          // Récupérer tous les utilisateurs
     router.get("/search", utilisateur.search);                     // Rechercher des utilisateurs
     router.get("/username/:username", utilisateur.findByUsername); // Récupérer par username
