@@ -1,14 +1,22 @@
+
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
 
 const app  = express ();
 
-let corsOptions = {
-  origin: "*",
+// Gestion dynamique de l'origine CORS
+const DEV_ORIGIN = process.env.DEV_ORIGIN || 'http://localhost:4200';
+const PROD_ORIGIN = process.env.PROD_ORIGIN || 'https://ton-front-en-prod.com';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const ALLOWED_ORIGIN = NODE_ENV === 'production' ? PROD_ORIGIN : DEV_ORIGIN;
+
+const corsOptions = {
+  origin: ALLOWED_ORIGIN,
+  credentials: true,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  headers: 'Content-Type, Authorization',
-  exposedHeaders:'Authorization'
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization']
 };
 
 app.use(cors(corsOptions));
