@@ -1,23 +1,34 @@
-// Rafraîchir le JWT access token
-exports.refreshToken = (req, res) => {
+// Rafraîchir le JWT access token (sécurisé avec BDD)
+exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
   const jwt = require('jsonwebtoken');
   const config = require('../config');
+  const RefreshToken = db.refresh_token;
   if (!refreshToken) {
     return res.status(401).json({ message: 'Refresh token manquant.' });
   }
   try {
-    // Vérifier le refresh token
-    const decoded = jwt.verify(refreshToken, config.ACCESS_TOKEN_SECRET);
+    // Chercher le refresh token en BDD
+    const tokenRecord = await RefreshToken.findOne({ where: { token: refreshToken } });
+    if (!tokenRecord) {
+      return res.status(403).json({ message: 'Refresh token invalide.' });
+    }
+    // Récupérer l'utilisateur lié
+    const user = await Utilisateurs.findByPk(tokenRecord.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+    }
     // Générer un nouveau access token
     const userPayload = {
-      id: decoded.id,
-      // Ajouter d'autres infos utilisateur si besoin
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role_id: user.role_id || 2
     };
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
     res.json({ accessToken });
   } catch (err) {
-    res.status(403).json({ message: 'Refresh token invalide.' });
+    res.status(500).json({ message: 'Erreur lors du refresh token.' });
   }
 };
 const db = require("../models");
@@ -326,7 +337,8 @@ exports.delete = (req, res) => {
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
-exports.login = (req, res) => {
+const crypto = require('crypto');
+exports.login = async (req, res) => {
   const credentials = {
     email: req.body.email,
     password: req.body.password
@@ -339,46 +351,48 @@ exports.login = (req, res) => {
     return res.status(400).send({ message: "Mot de passe requis." });
   }
 
-  Utilisateurs.findOne({ where: { email: credentials.email } })
-    .then(data => {
-      if (data) {
-        // En production, utiliser bcrypt.compare() pour vérifier le mot de passe hashé
-        if (data.password === credentials.password) {
-          // Authentification réussie
-          const userPayload = {
-            id: data.id,
-            username: data.username,
-            email: data.email,
-            role_id: data.role_id || 2 // 1=admin, 2=user par défaut
-          };
-          // Générer le JWT access token (15min)
-          const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-          // Générer un refresh token (stocké côté client, ici simple string, à sécuriser en prod)
-          const refreshToken = jwt.sign({ id: data.id }, config.ACCESS_TOKEN_SECRET, { expiresIn: '30d' });
-          // Placer le JWT dans un cookie httpOnly sécurisé
-          res.cookie('access_token', accessToken, {
-            httpOnly: true,
-            secure: false, // true en prod avec HTTPS
-            sameSite: 'lax',
-            maxAge: 15 * 60 * 1000 // 15 min
-          });
-          // Retourner le refresh token dans la réponse (à stocker côté client)
-          res.json({
-            id: data.id,
-            username: data.username,
-            email: data.email,
-            refreshToken
-          });
-        } else {
-          res.status(401).send({ message: "Mot de passe incorrect." });
-        }
+  try {
+    const data = await Utilisateurs.findOne({ where: { email: credentials.email } });
+    if (data) {
+      // En production, utiliser bcrypt.compare() pour vérifier le mot de passe hashé
+      if (data.password === credentials.password) {
+        // Authentification réussie
+        const userPayload = {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          role_id: data.role_id || 2 // 1=admin, 2=user par défaut
+        };
+        // Générer le JWT access token (15min)
+        const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+        // Générer un refresh token aléatoire sécurisé
+        const refreshToken = crypto.randomBytes(64).toString('hex');
+        // Stocker le refresh token en BDD
+        const RefreshToken = db.refresh_token;
+        await RefreshToken.create({ userId: data.id, token: refreshToken });
+        // Placer le JWT dans un cookie httpOnly sécurisé
+        res.cookie('access_token', accessToken, {
+          httpOnly: true,
+          secure: false, // true en prod avec HTTPS
+          sameSite: 'lax',
+          maxAge: 15 * 60 * 1000 // 15 min
+        });
+        // Retourner le refresh token dans la réponse (à stocker côté client)
+        res.json({
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          refreshToken
+        });
       } else {
-        res.status(404).send({ message: `Utilisateur avec email=${credentials.email} introuvable.` });
+        res.status(401).send({ message: "Mot de passe incorrect." });
       }
-    })
-    .catch(err => {
-      res.status(500).send({ message: "Erreur lors de la connexion avec email=" + credentials.email });
-    });
+    } else {
+      res.status(404).send({ message: `Utilisateur avec email=${credentials.email} introuvable.` });
+    }
+  } catch (err) {
+    res.status(500).send({ message: "Erreur lors de la connexion avec email=" + credentials.email });
+  }
 };
 
 // Vérifier la disponibilité d'un username
