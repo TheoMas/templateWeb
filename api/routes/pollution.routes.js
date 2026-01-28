@@ -3,14 +3,15 @@ module.exports = app => {
     const authenticateJWT = require("../jwt-middleware");
     let router = require("express").Router();
 
-    // Toutes les routes pollutions protégées par JWT
-    router.use(authenticateJWT);
-    router.post("/", pollution.create);
+    // Public read routes
     router.get("/", pollution.findAll);
     router.get("/:id", pollution.findOne);
-    router.put("/:id", pollution.update);
-    router.delete("/:id", pollution.delete);
-    router.delete("/", pollution.deleteAll);
+
+    // Protected write routes
+    router.post("/", authenticateJWT, pollution.create);
+    router.put("/:id", authenticateJWT, pollution.update);
+    router.delete("/:id", authenticateJWT, pollution.delete);
+    router.delete("/", authenticateJWT, pollution.deleteAll);
 
     app.use('/api/pollutions', router);
 };
