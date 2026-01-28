@@ -1,12 +1,11 @@
 const crypto = require('crypto');
-// Déconnexion : supprime le refresh token en BDD et le cookie côté client
+// Déconnexion : supprime le refresh token en BDD
 exports.logout = async (req, res) => {
   const { refreshToken } = req.body;
   const RefreshToken = db.refresh_token;
   if (refreshToken) {
     await RefreshToken.destroy({ where: { token: refreshToken } });
   }
-  res.clearCookie('access_token');
   res.status(200).json({ message: 'Déconnecté.' });
 };
 // Rafraîchir le JWT access token (sécurisé avec BDD, rotation du refresh token)
@@ -44,15 +43,7 @@ exports.refreshToken = async (req, res) => {
       role_id: user.role_id || 2
     };
     const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-        // Placer le nouveau access token dans un cookie httpOnly (comme au login)
-        const cookieOptions = {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          maxAge: 15 * 60 * 1000
-        };
-        res.cookie('access_token', accessToken, cookieOptions);
-    // Exposer aussi le token dans l'en-tête Authorization pour compatibilité
+    // Retourner accessToken et refreshToken dans le corps (pas de cookie)
     res.setHeader('Authorization', 'Bearer ' + accessToken);
     res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (err) {
@@ -362,7 +353,7 @@ exports.delete = (req, res) => {
     });
 };
 
-// Authentification - Login (JWT sécurisé en cookie httpOnly)
+// Authentification - Login (JWT via access/refresh tokens returned in response)
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
@@ -398,27 +389,13 @@ exports.login = async (req, res) => {
         // Stocker le refresh token en BDD
         const RefreshToken = db.refresh_token;
         await RefreshToken.create({ userId: data.id, token: refreshToken });
-        // Placer le JWT dans un cookie httpOnly sécurisé
-        res.cookie('access_token', accessToken, {
-          httpOnly: true,
-          secure: false, // true en prod avec HTTPS
-          sameSite: 'lax',
-          maxAge: 15 * 60 * 1000 // 15 min
-        });
-          const cookieOptions = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            maxAge: 15 * 60 * 1000 // 15 min
-          };
-          res.cookie('access_token', accessToken, cookieOptions);
-        // Exposer aussi le token dans l'en-tête Authorization pour compatibilité
+        // Retourner accessToken et refreshToken dans le corps de la réponse
         res.setHeader('Authorization', 'Bearer ' + accessToken);
-        // Retourner le refresh token dans la réponse (à stocker côté client)
         res.json({
           id: data.id,
           username: data.username,
           email: data.email,
+          accessToken,
           refreshToken
         });
       } else {
