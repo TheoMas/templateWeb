@@ -1,3 +1,25 @@
+// Rafraîchir le JWT access token
+exports.refreshToken = (req, res) => {
+  const { refreshToken } = req.body;
+  const jwt = require('jsonwebtoken');
+  const config = require('../config');
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token manquant.' });
+  }
+  try {
+    // Vérifier le refresh token
+    const decoded = jwt.verify(refreshToken, config.ACCESS_TOKEN_SECRET);
+    // Générer un nouveau access token
+    const userPayload = {
+      id: decoded.id,
+      // Ajouter d'autres infos utilisateur si besoin
+    };
+    const accessToken = jwt.sign(userPayload, config.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    res.json({ accessToken });
+  } catch (err) {
+    res.status(403).json({ message: 'Refresh token invalide.' });
+  }
+};
 const db = require("../models");
 const Utilisateurs = db.utilisateurs;
 const Op = db.Sequelize.Op;
