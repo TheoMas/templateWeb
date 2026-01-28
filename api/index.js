@@ -1,6 +1,8 @@
 
+
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const db = require("./models");
 
 const app  = express ();
@@ -19,7 +21,9 @@ const corsOptions = {
   exposedHeaders: ['Authorization']
 };
 
+
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // parse requests of content-type - application/json
 // Augmenter la limite à 10MB pour supporter les images base64
