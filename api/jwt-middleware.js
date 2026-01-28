@@ -1,6 +1,6 @@
 // Middleware pour sécuriser les routes avec JWT (cookie httpOnly)
 const jwt = require('jsonwebtoken');
-const config = require('../config');
+const config = require('./config');
 
 function authenticateJWT(req, res, next) {
   const token = req.cookies && req.cookies.access_token;
