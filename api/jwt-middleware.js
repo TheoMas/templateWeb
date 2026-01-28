@@ -3,13 +3,12 @@ const jwt = require('jsonwebtoken');
 const config = require('./config');
 
 function authenticateJWT(req, res, next) {
-  // Lire le token depuis l'en-tête Authorization, sinon depuis le cookie `access_token`
+  // Lire le token depuis l'en-tête Authorization uniquement
   let token = null;
   const authHeader = req.headers['authorization'];
+  console.log('[JWT] Authorization header:', authHeader ? (authHeader.length>20?authHeader.substring(0,20)+'...':authHeader) : 'none');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7);
-  } else if (req.cookies && req.cookies.access_token) {
-    token = req.cookies.access_token;
   }
   if (!token) {
     return res.status(401).json({ message: 'Token manquant' });
