@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 // Déconnexion : supprime le refresh token en BDD et le cookie côté client
 exports.logout = async (req, res) => {
   const { refreshToken } = req.body;
@@ -9,7 +10,6 @@ exports.logout = async (req, res) => {
   res.status(200).json({ message: 'Déconnecté.' });
 };
 // Rafraîchir le JWT access token (sécurisé avec BDD, rotation du refresh token)
-const crypto = require('crypto');
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
   const jwt = require('jsonwebtoken');
@@ -353,7 +353,6 @@ exports.delete = (req, res) => {
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
-const crypto = require('crypto');
 exports.login = async (req, res) => {
   const credentials = {
     email: req.body.email,
