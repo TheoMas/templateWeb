@@ -47,8 +47,8 @@ db.sequelize.sync({ force: false, alter: false })
 
 require("./routes")(app);
 
-// set port, listen for requests
-const PORT =  443;
+// set port, listen for requests (use dynamic port provided by Render)
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
