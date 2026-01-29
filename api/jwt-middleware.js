@@ -10,6 +10,22 @@ function authenticateJWT(req, res, next) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7);
   }
+  // Si pas trouvé dans Authorization, tenter depuis req.cookies (cookie-parser) puis header fallback
+  if (!token) {
+    if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+      console.log('[JWT] token read from req.cookies');
+    } else if (req.headers && req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').map(c => c.trim());
+      for (const c of cookies) {
+        if (c.startsWith('accessToken=')) {
+          token = decodeURIComponent(c.substring('accessToken='.length));
+          console.log('[JWT] token read from cookie header fallback');
+          break;
+        }
+      }
+    }
+  }
   if (!token) {
     return res.status(401).json({ message: 'Token manquant' });
   }
