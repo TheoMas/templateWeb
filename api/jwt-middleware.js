@@ -27,6 +27,14 @@ function authenticateJWT(req, res, next) {
     }
   }
   if (!token) {
+    // Debug: log incoming cookies/headers to investigate missing token
+    try {
+      console.log('[JWT] Token manquant - req.cookies =', req.cookies);
+      console.log('[JWT] Token manquant - Cookie header =', req.headers && req.headers.cookie ? req.headers.cookie : 'none');
+      console.log('[JWT] Token manquant - Request origin =', req.headers && req.headers.origin ? req.headers.origin : 'none');
+    } catch (e) {
+      console.error('[JWT] Error logging cookies:', e && e.message ? e.message : e);
+    }
     return res.status(401).json({ message: 'Token manquant' });
   }
   try {
