@@ -1,6 +1,6 @@
 module.exports = app => {
     const utilisateur = require("../controllers/utilisateur.controllers.js");
-    const authenticateJWT = require("../jwt-middleware");
+    const authenticateJWT = require("../jwt-middleware.js");
     let router = require("express").Router();
 
     // Authentification (publiques)

@@ -1,6 +1,6 @@
 module.exports = app => {
   const catalogue = require("../controllers/catalogue.controllers.js");
-  const authenticateJWT = require("../jwt-middleware");
+  const authenticateJWT = require("../jwt-middleware.js");
   let router = require("express").Router();
 
   // Toutes les routes catalogue protégées par JWT

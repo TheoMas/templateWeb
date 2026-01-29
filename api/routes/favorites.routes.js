@@ -1,6 +1,6 @@
 module.exports = app => {
   const favorites = require("../controllers/favorites.controllers.js");
-  const authenticateJWT = require("../jwt-middleware");
+  const authenticateJWT = require("../jwt-middleware.js");
   var router = require("express").Router();
 
   // Toutes les routes favorites protégées par JWT

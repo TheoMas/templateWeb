@@ -427,6 +427,12 @@ exports.login = async (req, res) => {
         const refreshToken = crypto.randomBytes(64).toString('hex');
         // Stocker le refresh token en BDD
         const RefreshToken = db.refresh_token;
+        // Supprimer les anciens refresh tokens pour cet utilisateur (force 1 token actif)
+        try {
+          await RefreshToken.destroy({ where: { userId: data.id } });
+        } catch (e) {
+          console.error('[AUTH] error clearing old refresh tokens:', e && e.message ? e.message : e);
+        }
         await RefreshToken.create({ userId: data.id, token: refreshToken });
         // Mettre l'access token dans un cookie HTTP-only et stocker le refresh token en cookie
         const NODE_ENV = process.env.NODE_ENV || 'development';

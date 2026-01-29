@@ -1,6 +1,6 @@
 module.exports = app => {
     const pollution = require("../controllers/pollution.controllers.js");
-    const authenticateJWT = require("../jwt-middleware");
+    const authenticateJWT = require("../jwt-middleware.js");
     let router = require("express").Router();
 
     // Toutes les routes pollutions protégées par JWT

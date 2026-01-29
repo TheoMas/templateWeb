@@ -1,5 +1,5 @@
 const { Sequelize } = require ("sequelize");
-const { BDD }  = require ('../config');
+const { BDD }  = require ('../config.js');
 
 const sequelize = new Sequelize(BDD.bdname, BDD.user, BDD.password, {
     host: BDD.host,
