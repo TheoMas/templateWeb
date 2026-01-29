@@ -3,16 +3,7 @@ const crypto = require('crypto');
 exports.logout = async (req, res) => {
   // Read refresh token from cookie (if present)
   const RefreshToken = db.refresh_token;
-  let refreshToken = null;
-  if (req.headers && req.headers.cookie) {
-    const cookies = req.headers.cookie.split(';').map(c => c.trim());
-    for (const c of cookies) {
-      if (c.startsWith('refresh_token=')) {
-        refreshToken = decodeURIComponent(c.substring('refresh_token='.length));
-        break;
-      }
-    }
-  }
+  let refreshToken = req.cookies && req.cookies.refresh_token ? req.cookies.refresh_token : null;
   if (refreshToken) {
     await RefreshToken.destroy({ where: { token: refreshToken } });
   }
@@ -25,6 +16,7 @@ exports.logout = async (req, res) => {
     sameSite: isProd ? 'None' : 'Lax',
     path: '/',
   };
+  if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN;
   res.clearCookie('accessToken', cookieOptions);
   res.clearCookie('refresh_token', cookieOptions);
   res.status(200).json({ message: 'Déconnecté.' });
@@ -32,16 +24,7 @@ exports.logout = async (req, res) => {
 // Rafraîchir le JWT access token (sécurisé avec BDD, rotation du refresh token)
 exports.refreshToken = async (req, res) => {
   // Try to read refresh token from cookie (preferred)
-  let refreshToken = null;
-  if (req.headers && req.headers.cookie) {
-    const cookies = req.headers.cookie.split(';').map(c => c.trim());
-    for (const c of cookies) {
-      if (c.startsWith('refresh_token=')) {
-        refreshToken = decodeURIComponent(c.substring('refresh_token='.length));
-        break;
-      }
-    }
-  }
+  let refreshToken = req.cookies && req.cookies.refresh_token ? req.cookies.refresh_token : null;
   // Fallback to body for compatibility
   if (!refreshToken) refreshToken = req.body.refreshToken;
   const jwt = require('jsonwebtoken');
@@ -79,6 +62,7 @@ exports.refreshToken = async (req, res) => {
     // Mettre l'access token dans un cookie HTTP-only et stocker le refresh token en cookie (comme PalaisdelaBeaute)
     const NODE_ENV = process.env.NODE_ENV || 'development';
     const isProd = NODE_ENV === 'production';
+    // Cookie base options
     const cookieOptions = {
       httpOnly: true,
       secure: isProd,
@@ -86,6 +70,8 @@ exports.refreshToken = async (req, res) => {
       maxAge: 15 * 60 * 1000, // 15 minutes
       path: '/',
     };
+    // Optional domain for cross-subdomain cookies
+    if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN;
     res.cookie('accessToken', accessToken, cookieOptions);
     // refresh cookie (longer lived)
     const refreshCookieOptions = {
@@ -95,6 +81,7 @@ exports.refreshToken = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: '/',
     };
+    if (process.env.COOKIE_DOMAIN) refreshCookieOptions.domain = process.env.COOKIE_DOMAIN;
     res.cookie('refresh_token', newRefreshToken, refreshCookieOptions);
     res.setHeader('Authorization', 'Bearer ' + accessToken);
     res.json({ token: accessToken });
@@ -451,6 +438,7 @@ exports.login = async (req, res) => {
           maxAge: 15 * 60 * 1000, // 15 minutes
           path: '/',
         };
+        if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN;
         res.cookie('accessToken', accessToken, cookieOptions);
         res.setHeader('Authorization', 'Bearer ' + accessToken);
         const refreshCookieOptions = {
@@ -460,6 +448,7 @@ exports.login = async (req, res) => {
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
           path: '/',
         };
+        if (process.env.COOKIE_DOMAIN) refreshCookieOptions.domain = process.env.COOKIE_DOMAIN;
         res.cookie('refresh_token', refreshToken, refreshCookieOptions);
         res.json({
           id: data.id,
